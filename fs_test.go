@@ -2077,6 +2077,13 @@ func TestFSDirectoryRedirect(t *testing.T) {
 			uri:         "/docs?token=secret&sort=old",
 			location:    "http://example.com/docs/?sort=new",
 		},
+		// PathRewrite may point ctx.URI() to another host.
+		{
+			name:        "host set by PathRewrite",
+			pathRewrite: setInternalHost,
+			uri:         "https://public.example/static/docs?token=secret",
+			location:    "https://public.example/static/docs/?token=secret",
+		},
 		{
 			name:        "stripped prefix",
 			pathRewrite: NewPathPrefixStripper(len("/static")),
@@ -2131,6 +2138,11 @@ func TestFSDirectoryRedirect(t *testing.T) {
 func changeQueryArgs(ctx *RequestCtx) {
 	ctx.QueryArgs().Del("token")
 	ctx.QueryArgs().Set("sort", "new")
+}
+
+func setInternalHost(ctx *RequestCtx) []byte {
+	ctx.URI().Update("https://storage.example" + strings.TrimPrefix(string(ctx.Path()), "/static"))
+	return ctx.Path()
 }
 
 func setInternalQuery(ctx *RequestCtx) []byte {
